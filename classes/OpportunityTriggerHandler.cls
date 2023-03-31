@@ -17,6 +17,7 @@ public with sharing class OpportunityTriggerHandler {
     public static void afterUpdate(List<Opportunity> newList,Map<Id,Opportunity> oldMap){//NOPMD
         opportunityStageTaskReacord(newList, oldMap);
         updateRelatedAccounts(newList, oldMap);
+        updateDescriptionClosedLostAndWon(newList, oldMap);
     }
 
     public static void beforeDelete(List<Opportunity> oldList){//NOPMD
@@ -135,4 +136,18 @@ public with sharing class OpportunityTriggerHandler {
 
         return accounts;
     }
+
+    public static void updateDescriptionClosedLostAndWon(List<Opportunity> updatedOpportunities, Map<Id, Opportunity> opportunityMap) { //Q26
+        for (Opportunity opp : updatedOpportunities) {
+            if (opp.StageName != opportunityMap.get(opp.Id).StageName) {
+                if (opp.StageName == 'Closed Won') {
+                    opp.Description = 'Opportunity is Closed Won';
+                } else if (opp.StageName == 'Closed Lost') {
+                    opp.Description = 'Opportunity is Closed Lost';
+                }
+            }
+        }
+        update updatedOpportunities;
+    }
+
 }
