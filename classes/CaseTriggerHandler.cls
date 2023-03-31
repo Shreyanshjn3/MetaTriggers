@@ -42,39 +42,6 @@ public with sharing class CaseTriggerHandler {
         }
     }
 
-    // public static void totalNumberOfRecord(List<Case> newCases) { //Q22
-    //     // Get the Account IDs associated with the new Cases
-    //     Set<Id> accountIds = new Set<Id>();
-    //     for (Case c : newCases) {
-    //         accountIds.add(c.AccountId);
-    //     }
-        
-    //     // Query for the Accounts and their current totals
-    //     Map<Id, Account> accountsToUpdate = new Map<Id, Account>([SELECT Id, Total_Partner_Cases__c, Totak_Coustmer_Cases__c FROM Account WHERE Id IN :accountIds]);
-        
-    //     // Update the totals based on the new Cases
-    //     for (Case c : newCases) {
-    //         if (c.RecordType.DeveloperName == 'Partner_Case') {
-    //             if (accountsToUpdate.containsKey(c.AccountId)) {
-    //                 accountsToUpdate.get(c.AccountId).Total_Partner_Cases__c++;
-    //             } else {
-    //                 accountsToUpdate.put(c.AccountId, new Account(Id = c.AccountId, Total_Partner_Cases__c = 1));
-    //             }
-    //         } else if (c.RecordType.DeveloperName == 'Customer_Case') {
-    //             if (accountsToUpdate.containsKey(c.AccountId)) {
-    //                 accountsToUpdate.get(c.AccountId).Totak_Coustmer_Cases__c++;
-    //             } else {
-    //                 accountsToUpdate.put(c.AccountId, new Account(Id = c.AccountId, Totak_Coustmer_Cases__c = 1));
-    //             }
-    //         }
-    //     }
-        
-    //     // Update the Accounts
-    //     if (!accountsToUpdate.isEmpty()) {
-    //         update accountsToUpdate.values();
-    //     }
-    // }
-
     private static void populateNumberOfCaseOnAccount(List<Case> cases) { //Q22
         RecordType partnerRecordId = [Select ID,Name from RecordType where Name = 'Partner Case'];
         RecordType customerRecordId = [Select ID,Name from RecordType where Name = 'Customer Case'];

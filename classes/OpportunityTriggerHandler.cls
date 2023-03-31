@@ -3,8 +3,9 @@ public with sharing class OpportunityTriggerHandler {
   public static void beforeInsert(List<Opportunity> newList) {//NOPMD
         populateDescription(newList);
         showUpdateStage(newList);
+        updateRelatedAccounts(newList);
     }
-
+    
     public static void afterInsert(List<Opportunity> newList){
         latestOpportunityAmount(newList);
     }
@@ -15,6 +16,7 @@ public with sharing class OpportunityTriggerHandler {
 
     public static void afterUpdate(List<Opportunity> newList,Map<Id,Opportunity> oldMap){//NOPMD
         opportunityStageTaskReacord(newList, oldMap);
+        updateRelatedAccounts(newList, oldMap);
     }
 
     public static void beforeDelete(List<Opportunity> oldList){//NOPMD
@@ -22,7 +24,7 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public static void afterDelete(List<Opportunity> oldList){//NOPMD
-        
+        updateRelatedAccounts(oldList);
     }
     
 
@@ -97,4 +99,40 @@ public with sharing class OpportunityTriggerHandler {
         insert newTasks;
     }
 
+    private static void updateRelatedAccounts(List<Opportunity> opportunities) { //Q23
+        Set<Id> accountIds = new Set<Id>();
+        for (Opportunity opportunity : opportunities) {
+            accountIds.add(opportunity.AccountId);
+        }
+        List<Account> accounts = UpdateOpportunityRelatedAccounts(accountIds);
+        if (!accounts.isEmpty()) {
+            update accounts;
+        }
+    }
+
+    private static void updateRelatedAccounts(List<Opportunity> opportunities, Map<Id, Opportunity> opportunityMap) { //Q23
+        Set<Id> accountIds = new Set<Id>();
+        for (Opportunity opportunity : opportunities) {
+            if (opportunity.Amount != opportunityMap.get(opportunity.Id).Amount) {
+                accountIds.add(opportunity.AccountId);
+            }
+        }
+        List<Account> accounts = UpdateOpportunityRelatedAccounts(accountIds);
+        if (!accounts.isEmpty()) {
+            update accounts;
+        }
+    }
+
+    public static List<Account> updateOpportunityRelatedAccounts(Set<Id> AccountIds) { //Q23
+        List<Account> accounts = new List<Account>();
+        AggregateResult[] groupedResults = [SELECT AccountId, Sum(Amount)annulRevenue FROM Opportunity  WHERE AccountId IN: AccountIds GROUP BY AccountId];
+
+        for (AggregateResult variable : groupedResults) {
+            String accountId = String.valueOf(variable.get('AccountId'));
+            Integer annualRevenue = Integer.valueOf(variable.get('annulRevenue'));
+            accounts.add(new Account(Id = accountId, AnnualRevenue = annualRevenue));
+        }
+
+        return accounts;
+    }
 }

@@ -8,6 +8,7 @@ public with sharing class AccountTriggerHandler {
         createRelatedContact(newList);
         createRelatedRecordBasedOnChoice(newList);
         createRelatedOpportunity(newList);
+        shareWithStandardUsers(newList);
     }
 
     public static void beforeUpdate(List<Account> newList,Map<Id,Account> oldMap){//NOPMD
@@ -24,6 +25,7 @@ public with sharing class AccountTriggerHandler {
         updatingContactMailingAddress(newList, oldMap);
         copyBillingToShippingAddressWithQuery(newList, oldMap);
         handleAccountOwnerChange(newList, oldMap);
+        getAccountRelatedOpportunity(newList, oldMap);
     }
 
     public static void beforeDelete(List<Account> oldList){//NOPMD
@@ -350,6 +352,42 @@ public with sharing class AccountTriggerHandler {
             
             update contactsToUpdate;
         }
+    }
+
+    public static void getAccountRelatedOpportunity(List<Account> accounts, Map<Id,Account> accountMap) { //Q23
+        List<Opportunity> opportunities = [SELECT Id, StageName, Annual_Revenue__c, Account.AnnualRevenue, AccountId, Account.Active__c FROM Opportunity WHERE AccountId IN: accountMap.keySet()];
+        
+        for (Opportunity opportunity : opportunities) {
+            if (opportunity.Account.Active__c != accountMap.get(opportunity.AccountId).Active__c 
+                && opportunity.Account.Active__c == 'no' 
+                && accountMap.get(opportunity.AccountId).Active__c == 'yes' 
+                && opportunity.StageName != 'Closed Won') {
+                opportunity.StageName = 'Close Lost';
+            }
+            if (opportunity.Account.AnnualRevenue != NULL && opportunity.Account.AnnualRevenue !=  accountMap.get(opportunity.AccountId).AnnualRevenue) {
+                opportunity.Annual_Revenue__c = opportunity.Account.AnnualRevenue;
+            }
+        }
+        
+        update opportunities;
+    }
+
+    public static void shareWithStandardUsers(List<Account> newAccounts) { //Q31
+        List<AccountShare> accountSharesToInsert = new List<AccountShare>();
+        List<User> standardUsers = [SELECT Id FROM User WHERE Profile.Name = 'Standard User'];
+        
+        for (Account newAccount : newAccounts) {
+            for (User standardUser : standardUsers) {
+                AccountShare accountShare = new AccountShare();
+                accountShare.AccountId = newAccount.Id;
+                accountShare.UserOrGroupId = standardUser.Id;
+                accountShare.AccountAccessLevel = 'Read';
+                accountShare.RowCause = Schema.AccountShare.RowCause.Manual;
+                accountSharesToInsert.add(accountShare);
+            }
+        }
+        
+        insert accountSharesToInsert;
     }
 
 }
